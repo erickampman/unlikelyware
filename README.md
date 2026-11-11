@@ -51,3 +51,12 @@ package's `THIRD_PARTY_NOTICES.md`.
 | `products.json` | Each product's kind, tagline, formats and links |
 | `scripts/package.sh` | Makes one product's package from its build |
 | `scripts/sign-notarize.sh` | Signs, notarizes and staples the macOS bundles (used by `package.sh`) |
+| `scripts/publish.sh` | Uploads packages to a release and merges their lines into its `SHA256SUMS.txt` |
+| `.github/workflows/release.yml` | Builds and packages every product on GitHub's runners (optional) |
+
+A package can be made and published from any machine, without the workflow:
+
+```bash
+scripts/package.sh path/to/StruckKit out
+scripts/publish.sh v0.9.0 out/StruckKit-0.9.0-macos-arm64.zip
+```
