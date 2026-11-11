@@ -33,7 +33,77 @@ Each product has one package per platform, named `<Product>-<version>-<os>-<arch
 macOS, a `.tar.gz` on Linux. Each holds the product, its `LICENSE` (MIT) and
 `THIRD_PARTY_NOTICES.md`. Every release has a `SHA256SUMS.txt` for checking the downloads.
 
-Install notes come with the first release.
+To check a download, compare its checksum with its line in `SHA256SUMS.txt`:
+
+```bash
+sha256sum ModicumFM-0.9.0-linux-x86_64.tar.gz
+```
+
+On macOS, `shasum -a 256` in place of `sha256sum`.
+
+## Installing
+
+### What you need
+
+- **macOS:** macOS 26 or later on Apple Silicon. Intel Macs aren't supported.
+- **Linux:** x86-64, Ubuntu 24.04 or newer, or another distribution with glibc 2.38 or later
+  and GCC 13's libstdc++ or later (Debian 13, Fedora 39 and later). The windows are X11, so on
+  a Wayland desktop they run through XWayland, and they draw with OpenGL. A desktop install
+  has everything the plugins and KeyboardEDO need; StageHand needs two more packages (below).
+- **Windows:** not supported.
+
+### Plugins
+
+Every product except StageHand and KeyboardEDO is a CLAP plugin: a single `<Product>.clap`.
+Unpack the download and put the `.clap` in your CLAP folder (create the folder if it isn't
+there):
+
+| | Linux | macOS |
+|---|---|---|
+| For you | `~/.clap` | `~/Library/Audio/Plug-Ins/CLAP` |
+| For every user | `/usr/lib/clap` | `/Library/Audio/Plug-Ins/CLAP` |
+
+On macOS, `~/Library` is hidden in Finder: Go ▸ Go to Folder opens it.
+
+Then let your host find it. A host that is already running keeps the plugins it loaded, so quit
+and restart it. Most hosts scan for new plugins as they start; if the plugin still doesn't
+appear, rescan from the host's plugin settings (in REAPER: Preferences ▸ Plug-ins ▸ CLAP, "Clear
+cache/re-scan"). StageHand looks in the same folders.
+
+To uninstall, delete the `.clap`.
+
+### StageHand and KeyboardEDO
+
+**macOS:** unzip and drag the app into Applications. The first time you open it, macOS asks
+whether to open an app downloaded from the internet: click Open. The apps are signed and
+notarized, so nothing more is needed.
+
+**Linux:** unpack the download anywhere you'll keep it, such as `~/.local/lib/stagehand`, and
+keep the executable and its `help` folder together (Help looks for `help/` beside the
+executable). To run it by name, link it into a directory on your `PATH`:
+
+```bash
+ln -sf ~/.local/lib/stagehand/stagehand ~/.local/bin/stagehand
+```
+
+The same for KeyboardEDO, with `keyboardedo`.
+
+StageHand plays through JACK, and on a desktop without a JACK server it restarts itself under
+PipeWire's `pw-jack`. Neither library is on a fresh Ubuntu desktop, and without them StageHand
+won't start:
+
+```bash
+sudo apt install libjack-jackd2-0 pipewire-jack
+```
+
+If StageHand reports "no real-time permission" for its MIDI thread, MIDI timing may jitter
+under load. Adding yourself to the `audio` group with a real-time limit fixes that (Ubuntu
+Studio's installer sets it up); audio itself is unaffected, since PipeWire handles its own.
+
+### Building it yourself
+
+Each product's repo has a BUILDING.md: clone, `tools/fetch_deps.sh`, then CMake. A build installs
+nothing until you ask it to.
 
 ## Support
 
