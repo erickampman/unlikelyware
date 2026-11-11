@@ -1,0 +1,180 @@
+# Builds every product from its own repo and packages it (ReleaseUMP R4-3, PACKAGING.md).
+#
+# This first part builds only: no signing secrets, nothing published. Each product builds on
+# Linux (ubuntu-24.04, the oldest Ubuntu supported) and macOS (macos-26, the deployment target)
+# with the steps in its BUILDING.md, the same as its own CI, and its tests run.
+#   Linux:  scripts/package.sh writes the final .tar.gz. The apps (StageHand, KeyboardEDO) are
+#           built and tested but not packaged yet: their tarball layout is still open.
+#   macOS:  scripts/package.sh signs ad hoc, as a dry run of the packaging (an -unnotarized zip).
+#           The built bundles and the product files package.sh needs are saved as a kit for the
+#           signing job, which comes next (R4-18).
+# The collect job gathers every package into one "packages" artifact with SHA256SUMS.txt.
+#
+# The project repos are private until R1-19, so checkouts use SOURCES_TOKEN (a fine-grained token,
+# Contents read-only on the twelve projects, DPF, pugl and uw-core). It isn't needed once they're
+# public. Run by hand: Actions -> Release -> Run workflow.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch or tag to build in every product repo (empty: each repo's default branch)"
+        required: false
+        default: ""
+      products:
+        description: "Products to build, comma-separated (empty: all twelve)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        env:
+          PRODUCTS: ${{ inputs.products }}
+        run: |
+          python3 -I - products.json <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os, sys
+          products = json.load(open(sys.argv[1]))["products"]
+          wanted = [p.strip() for p in os.environ.get("PRODUCTS", "").split(",") if p.strip()]
+          unknown = [p for p in wanted if p not in products]
+          if unknown:
+              sys.exit("not in products.json: " + ", ".join(unknown))
+          names = wanted or list(products)
+          include = []
+          for name in names:
+              p = products[name]
+              repo = p["repo"].removeprefix("https://github.com/")
+              for os_ in ("ubuntu-24.04", "macos-26"):
+                  include.append({"product": name, "repo": repo, "kind": p["kind"], "os": os_})
+          print("matrix=" + json.dumps({"include": include}))
+          PY
+
+  build:
+    needs: plan
+    name: ${{ matrix.product }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      P: ${{ matrix.product }}
+    steps:
+      - name: This repo (scripts, products.json)
+        uses: actions/checkout@v4
+        with:
+          path: dl
+      - name: ${{ matrix.product }} at ${{ inputs.ref || 'its default branch' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          ref: ${{ inputs.ref }}
+          token: ${{ secrets.SOURCES_TOKEN }}
+          # package.sh takes the product's name from its folder's name.
+          path: src/${{ matrix.product }}
+      # fetch_deps.sh's own `git submodule` clones don't get checkout's token, so hand it to git
+      # for the private repos (uw-core, dpf and its pugl).
+      - name: Credentials for the private submodules
+        env:
+          SOURCES_TOKEN: ${{ secrets.SOURCES_TOKEN }}
+        run: |
+          git config --global url."https://x-access-token:${SOURCES_TOKEN}@github.com/erickampman/".insteadOf \
+            "https://github.com/erickampman/"
+      - name: Submodules and dependency patches
+        working-directory: src/${{ matrix.product }}
+        run: tools/fetch_deps.sh
+      - name: Packages (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          # One package list for every Unlikelyware project, as in BUILDING.md
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build pkg-config python3 git \
+            libgl1-mesa-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxinerama-dev \
+            libxcb1-dev libx11-xcb-dev libxcb-util-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libfontconfig1-dev libasound2-dev libjack-jackd2-dev \
+            libxfixes-dev libxi-dev libxss-dev libxtst-dev libwayland-dev wayland-protocols \
+            libegl1-mesa-dev libgles2-mesa-dev libdrm-dev libgbm-dev libdecor-0-dev libudev-dev \
+            libdbus-1-dev libibus-1.0-dev
+      - name: Packages (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja
+      - name: Configure
+        working-directory: src/${{ matrix.product }}
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        working-directory: src/${{ matrix.product }}
+        run: cmake --build build
+      - name: Test
+        working-directory: src/${{ matrix.product }}
+        run: ctest --test-dir build --output-on-failure --timeout 30
+      # A fresh checkout can't have uncommitted work, but fetch_deps.sh's patches show in the
+      # submodules, so package.sh's dirty check is skipped here.
+      - name: Package (Linux)
+        if: runner.os == 'Linux' && matrix.kind != 'app'
+        run: dl/scripts/package.sh --allow-dirty "src/$P" out
+      - name: Package, signed ad hoc (macOS)
+        if: runner.os == 'macOS'
+        env:
+          SIGN_IDENTITY: "-"
+        run: dl/scripts/package.sh --allow-dirty "src/$P" out
+      # The signing job's input: the built bundles plus the files package.sh reads, as a
+      # product folder. A tar keeps the bundles' symlinks and permissions, which an artifact
+      # alone would lose.
+      - name: Kit for signing (macOS)
+        if: runner.os == 'macOS'
+        working-directory: src/${{ matrix.product }}
+        run: |
+          files=(CMakeLists.txt THIRD_PARTY_NOTICES.md)
+          for f in LICENSE LICENSE.txt "cmake/$P.entitlements"; do [ -f "$f" ] && files+=("$f"); done
+          for b in app clap vst3 component; do [ -e "build/$P.$b" ] && files+=("build/$P.$b"); done
+          mkdir -p "$GITHUB_WORKSPACE/kit"
+          tar -czf "$GITHUB_WORKSPACE/kit/$P-macos-kit.tar.gz" -s ",^,$P/," "${files[@]}"
+          tar -tzf "$GITHUB_WORKSPACE/kit/$P-macos-kit.tar.gz" | grep -v '/Contents/.' || true
+      - name: Save the package
+        if: runner.os == 'macOS' || matrix.kind != 'app'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pkg-${{ matrix.product }}-${{ runner.os }}
+          path: out/*.*z*
+          if-no-files-found: error
+      - name: Save the kit (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kit-${{ matrix.product }}
+          path: kit/*.tar.gz
+          if-no-files-found: error
+
+  collect:
+    needs: build
+    if: always() && needs.build.result != 'cancelled'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pkg-*
+          merge-multiple: true
+          path: packages
+      - name: SHA256SUMS.txt
+        working-directory: packages
+        run: |
+          ls -l
+          sha256sum -- * | sort -k2 > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: packages
