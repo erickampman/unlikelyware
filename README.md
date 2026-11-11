@@ -52,11 +52,39 @@ package's `THIRD_PARTY_NOTICES.md`.
 | `scripts/package.sh` | Makes one product's package from its build |
 | `scripts/sign-notarize.sh` | Signs, notarizes and staples the macOS bundles (used by `package.sh`) |
 | `scripts/publish.sh` | Uploads packages to a release and merges their lines into its `SHA256SUMS.txt` |
-| `.github/workflows/release.yml` | Builds and packages every product on GitHub's runners (optional) |
+| `.github/workflows/release.yml` | Builds and packages every product on GitHub's runners (not used: releases are made locally) |
 
-A package can be made and published from any machine, without the workflow:
+## Making a release package
+
+For the maintainer: publishing needs the Developer ID certificate in the Mac's keychain, a
+`notarytool` keychain profile, and write access to this repo through `gh`. Each product is
+built, packaged and published on its own machine, one platform at a time.
+
+Once per machine, point `UW_DOWNLOADS_DIR` at this repo's checkout, in your shell's
+startup file (`~/.zprofile` or `~/.zshrc` with zsh, `~/.bashrc` with bash):
 
 ```bash
-scripts/package.sh path/to/StruckKit out
-scripts/publish.sh v0.9.0 out/StruckKit-0.9.0-macos-arm64.zip
+export UW_DOWNLOADS_DIR=~/path/to/unlikelyware
 ```
+
+Then, in a product's checkout, built from its release tag:
+
+```bash
+"$UW_DOWNLOADS_DIR/scripts/package.sh"
+```
+
+```bash
+"$UW_DOWNLOADS_DIR/scripts/publish.sh" v0.9.0
+```
+
+`package.sh` writes `<Product>-<version>-<os>-<arch>.zip` (macOS, signed, notarized and stapled)
+or `.tar.gz` (Linux) into `out/` here, with its line in `out/SHA256SUMS.txt`. It stops if the
+checkout's tag and its CMake version differ, if the checkout has uncommitted changes, or if the
+build is stale. `--sign-only` makes a package without notarizing, named `-unnotarized`.
+
+`publish.sh` takes that package (this product, this platform, the tag's version), checks it
+(never `-unnotarized`; on a Mac, a stapled ticket on every bundle), uploads it to the release,
+replacing a file of the same name, and merges its line into the release's `SHA256SUMS.txt`.
+The release must exist; `--create` makes it as a draft. Publish from one machine at a time.
+
+Both scripts take explicit paths too, and `--help` lists their options.

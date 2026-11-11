@@ -4,11 +4,16 @@
 # its line to SHA256SUMS.txt.
 #
 # Usage:
-#   package.sh [options] PRODUCT_DIR OUT_DIR
+#   package.sh [options] [PRODUCT_DIR [OUT_DIR]]
 #
 #   PRODUCT_DIR  the product's checkout, already built (cmake --build build); its folder name is
-#                the product's key in products.json (StageHand, ModicumFM, ...)
-#   OUT_DIR      where the archive and SHA256SUMS.txt go (made if missing)
+#                the product's key in products.json (StageHand, ModicumFM, ...). Default: the
+#                current folder
+#   OUT_DIR      where the archive and SHA256SUMS.txt go (made if missing). Default: out/ in
+#                this repo, where publish.sh looks
+#
+# From a product's checkout, with UW_DOWNLOADS_DIR set to this repo's checkout:
+#   "$UW_DOWNLOADS_DIR/scripts/package.sh"
 #
 # Steps:
 #   1. Kind and formats from products.json; version from CMakeLists.txt's project(VERSION).
@@ -57,11 +62,14 @@ while [ $# -gt 0 ]; do
         *)             ARGS+=("$1"); shift ;;
     esac
 done
-[ ${#ARGS[@]} -eq 2 ] || { usage >&2; exit 2; }
+[ ${#ARGS[@]} -le 2 ] || { usage >&2; exit 2; }
+SRC_ARG=${ARGS[0]:-.}
+OUT_ARG=${ARGS[1]:-$HERE/../out}
 
-SRC=$(cd "${ARGS[0]}" && pwd) || die "no such folder: ${ARGS[0]}"
-mkdir -p "${ARGS[1]}"
-OUT=$(cd "${ARGS[1]}" && pwd)
+SRC=$(cd "$SRC_ARG" && pwd) || die "no such folder: $SRC_ARG"
+[ -f "$SRC/CMakeLists.txt" ] || die "$SRC isn't a product checkout (no CMakeLists.txt)"
+mkdir -p "$OUT_ARG"
+OUT=$(cd "$OUT_ARG" && pwd)
 BUILD_DIR=${BUILD_DIR:-$SRC/build}
 [ -d "$BUILD_DIR" ] || die "no build folder: $BUILD_DIR (build first, or --build-dir)"
 

@@ -4,11 +4,16 @@
 # without the release workflow.
 #
 # Usage:
-#   publish.sh [options] TAG PACKAGE...
+#   publish.sh [options] TAG [PACKAGE...]
 #
 #   TAG      the release: v0.9.0 (the preview, every product) or <Product>-<version>
 #            (one product's release, after 1.0.0)
-#   PACKAGE  <Product>-<version>-<os>-<arch>.zip or .tar.gz, as package.sh writes them
+#   PACKAGE  <Product>-<version>-<os>-<arch>.zip or .tar.gz, as package.sh writes them.
+#            Default: this product's package for this machine's platform, from out/ in this
+#            repo (where package.sh puts it); the product is the current folder's name
+#
+# From a product's checkout, after package.sh, with UW_DOWNLOADS_DIR set to this repo's checkout:
+#   "$UW_DOWNLOADS_DIR/scripts/publish.sh" v0.9.0
 #
 # Steps:
 #   1. Checks each package: its name, that it isn't -unnotarized, that its version fits TAG,
@@ -50,9 +55,27 @@ while [ $# -gt 0 ]; do
         *)            ARGS+=("$1"); shift ;;
     esac
 done
-[ ${#ARGS[@]} -ge 2 ] || { usage >&2; exit 2; }
+[ ${#ARGS[@]} -ge 1 ] || { usage >&2; exit 2; }
 TAG=${ARGS[0]}
 PKGS=("${ARGS[@]:1}")
+
+# No package named: this product's, for this platform, from out/.
+if [ ${#PKGS[@]} -eq 0 ]; then
+    HERE=$(cd "$(dirname "$0")" && pwd)
+    P=$(basename "$PWD")
+    [ -f CMakeLists.txt ] || die "run this in a product's checkout, or name the package"
+    case "$TAG" in
+        v*)     V=${TAG#v} ;;
+        "$P"-*) V=${TAG#"$P"-} ;;
+        *)      die "release $TAG isn't v<version> or $P-<version>" ;;
+    esac
+    case "$(uname -s)" in
+        Darwin) PKGS=("$HERE/../out/$P-$V-macos-$(uname -m).zip") ;;
+        Linux)  PKGS=("$HERE/../out/$P-$V-linux-$(uname -m).tar.gz") ;;
+        *)      die "unsupported OS: $(uname -s)" ;;
+    esac
+    [ -f "${PKGS[0]}" ] || die "no package ${PKGS[0]#"$HERE/../"} (run package.sh first)"
+fi
 [ -z "$NOTES" ] || [ -f "$NOTES" ] || die "no such notes file: $NOTES"
 
 command -v gh >/dev/null || die "gh isn't installed"
