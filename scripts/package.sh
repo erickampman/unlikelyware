@@ -22,7 +22,9 @@
 #      <P>.component once products.json lists VST3 and AUv2 under "now".
 #   3. Stage them in <P>-<version>-<os>-<arch>/ with LICENSE (LICENSE or LICENSE.txt) and
 #      THIRD_PARTY_NOTICES.md. The build folder is never changed.
-#   4. macOS: sign, notarize and staple the staged bundles with sign-notarize.sh (beside this
+#   4. Linux: stop if any staged binary needs a newer glibc or libstdc++ than Ubuntu 24.04 has
+#      (R4-1), the oldest Linux the downloads support.
+#      macOS: sign, notarize and staple the staged bundles with sign-notarize.sh (beside this
 #      script), with PRODUCT_DIR/cmake/<P>.entitlements if there is one (StageHand).
 #   5. Archive with ditto (macOS) or tar (Linux); replace the product's line in SHA256SUMS.txt.
 #
@@ -36,6 +38,9 @@
 #
 # Environment: SIGN_IDENTITY and NOTARY_PROFILE pass through to sign-notarize.sh
 # (SIGN_IDENTITY=- signs ad hoc, for testing, and implies --sign-only).
+# MAX_GLIBC, MAX_GLIBCXX and MAX_CXXABI (Linux) are the newest symbol versions a binary may
+# need: Ubuntu 24.04's, 2.39, 3.4.33 and 1.3.15. Change them only with the README's
+# "What you need" section.
 #
 # Linux apps (StageHand, KeyboardEDO) aren't packaged yet: their layout is still open.
 
@@ -162,6 +167,33 @@ for f in "${FILES[@]}"; do
 done
 cp "$LICENSE" "$STAGE/LICENSE"
 cp "$SRC/THIRD_PARTY_NOTICES.md" "$STAGE/"
+
+# --- 4a. Oldest Linux the binaries run on (Linux) -----------------------------------------------
+# A binary built on a newer system can ask for symbol versions Ubuntu 24.04's glibc or libstdc++
+# doesn't have; it then fails to load there ("version GLIBC_2.40 not found").
+
+if [ "$OS" = linux ]; then
+    command -v objdump >/dev/null || die "objdump not found (apt install binutils)"
+    declare -A MAX=([GLIBC]=${MAX_GLIBC:-2.39} [GLIBCXX]=${MAX_GLIBCXX:-3.4.33} [CXXABI]=${MAX_CXXABI:-1.3.15})
+    ELF=$'\x7fELF'
+    TOO_NEW=0
+    while IFS= read -r -d '' bin; do
+        [ "$(head -c4 "$bin")" = "$ELF" ] || continue
+        syms=$(objdump -T "$bin") || die "objdump can't read $bin"
+        need=""
+        for lib in GLIBC GLIBCXX CXXABI; do
+            v=$(grep -oE "\(${lib}_[0-9.]+\)" <<<"$syms" | tr -d '()' | sed "s/^${lib}_//" | sort -Vu | tail -1)
+            [ -n "$v" ] || continue
+            need+=" ${lib}_$v"
+            if [ "$(printf '%s\n%s\n' "$v" "${MAX[$lib]}" | sort -V | tail -1)" != "${MAX[$lib]}" ]; then
+                echo "error: ${bin#"$STAGE"/} needs ${lib}_$v; the limit is ${lib}_${MAX[$lib]} (MAX_$lib)" >&2
+                TOO_NEW=1
+            fi
+        done
+        echo "  ${bin#"$STAGE"/} needs${need:- nothing versioned}"
+    done < <(find "${STAGED[@]}" -type f -print0)
+    [ "$TOO_NEW" -eq 0 ] || die "build on Ubuntu 24.04 (R4-1), or the download won't run there"
+fi
 
 # --- 4. Sign and notarize (macOS) ---------------------------------------------------------------
 

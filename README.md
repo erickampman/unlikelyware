@@ -46,8 +46,8 @@ On macOS, `shasum -a 256` in place of `sha256sum`.
 ### What you need
 
 - **macOS:** macOS 26 or later on Apple Silicon. Intel Macs aren't supported.
-- **Linux:** x86-64, Ubuntu 24.04 or newer, or another distribution with glibc 2.38 or later
-  and GCC 13's libstdc++ or later (Debian 13, Fedora 39 and later). The windows are X11, so on
+- **Linux:** x86-64, Ubuntu 24.04 or newer, or another distribution with glibc 2.39 or later
+  and GCC 14's libstdc++ or later (Debian 13, Fedora 40 and later). The windows are X11, so on
   a Wayland desktop they run through XWayland, and they draw with OpenGL. A desktop install
   has everything the plugins and KeyboardEDO need; StageHand needs two more packages (below).
 - **Windows:** not supported.
