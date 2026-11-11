@@ -1,0 +1,98 @@
+{
+  "publisher": {
+    "name": "Unlikelyware",
+    "license": "MIT",
+    "support": "GitHub Issues in each product's repo",
+    "kofi": null,
+    "downloads": "https://github.com/erickampman/unlikelyware",
+    "website": null,
+    "kvr": null
+  },
+  "platforms": ["Linux x86-64", "macOS 26 or later (Apple Silicon)"],
+  "products": {
+    "StageHand": {
+      "kind": "app",
+      "tagline": "Live-performance host for CLAP plugins, with MIDI 1.0 and MIDI 2.0 both first-class",
+      "formats": null,
+      "repo": "https://github.com/erickampman/StageHand",
+      "kvr": null
+    },
+    "KeyboardEDO": {
+      "kind": "app",
+      "tagline": "On-screen MIDI 2.0 keyboard for any equal division of the octave",
+      "formats": null,
+      "repo": "https://github.com/erickampman/KeyboardEDO",
+      "kvr": null
+    },
+    "PlainOldSynth": {
+      "kind": "instrument",
+      "tagline": "Classic subtractive synth: one stereo-detuned oscillator, 24 dB low-pass, two ADSRs, two LFOs",
+      "formats": {"now": ["CLAP"], "planned": ["VST3", "AUv2 (macOS)"]},
+      "repo": "https://github.com/erickampman/PlainOldSynth",
+      "kvr": null
+    },
+    "StruckSynth": {
+      "kind": "instrument",
+      "tagline": "Modal-synthesis instrument: a shaped strike into a bank of tuned resonators",
+      "formats": {"now": ["CLAP"], "planned": ["VST3", "AUv2 (macOS)"]},
+      "repo": "https://github.com/erickampman/StruckSynth",
+      "kvr": null
+    },
+    "StruckRoom": {
+      "kind": "instrument",
+      "tagline": "A struck instrument inside a room that scales with the note: somewhere between an instrument and a reverb",
+      "formats": {"now": ["CLAP"], "planned": ["VST3", "AUv2 (macOS)"]},
+      "repo": "https://github.com/erickampman/StruckRoom",
+      "kvr": null
+    },
+    "StruckGaussian": {
+      "kind": "instrument",
+      "tagline": "A struck object whose modes are a Gaussian cloud around the note: from a chorus on one pitch to a wide clang",
+      "formats": {"now": ["CLAP"], "planned": ["VST3", "AUv2 (macOS)"]},
+      "repo": "https://github.com/erickampman/StruckGaussian",
+      "kvr": null
+    },
+    "StruckKit": {
+      "kind": "instrument",
+      "tagline": "Modal-synthesis drum kit, a whole kit from one instance",
+      "formats": {"now": ["CLAP"], "planned": ["VST3", "AUv2 (macOS)"]},
+      "repo": "https://github.com/erickampman/StruckKit",
+      "kvr": null
+    },
+    "IFSynth": {
+      "kind": "instrument",
+      "tagline": "Fractal synth: oscillator, envelopes and LFOs shaped by IFS fractals you draw",
+      "formats": {"now": ["CLAP"], "planned": ["VST3", "AUv2 (macOS)"]},
+      "repo": "https://github.com/erickampman/IFSynth",
+      "kvr": null
+    },
+    "ModicumFM": {
+      "kind": "instrument",
+      "tagline": "6-operator FM synth with friendly macros",
+      "formats": {"now": ["CLAP"], "planned": ["VST3", "AUv2 (macOS)"]},
+      "repo": "https://github.com/erickampman/ModicumFM",
+      "kvr": null
+    },
+    "Retune": {
+      "kind": "note effect",
+      "tagline": "Transposes every note by a fixed interval in any equal division of the octave",
+      "formats": {"now": ["CLAP"], "planned": ["VST3", "AUv2 (macOS)"]},
+      "repo": "https://github.com/erickampman/Retune",
+      "kvr": null
+    },
+    "NoteGran": {
+      "kind": "note effects",
+      "tagline": "Granular synthesis with notes as the grains: Cloud, Chords, Grid, Burst and Buffer",
+      "formats": {"now": ["CLAP"], "planned": []},
+      "repo": "https://github.com/erickampman/NoteGran",
+      "kvr": null
+    },
+    "EDOSpread12": {
+      "kind": "note effect",
+      "tagline": "Plays any equal division of the octave from an ordinary 12-key keyboard, each key on the step you give it",
+      "formats": {"now": ["CLAP"], "planned": []},
+      "repo": "https://github.com/erickampman/EDOSpread12",
+      "kvr": null
+    }
+  }
+}

@@ -1,54 +1,53 @@
-# unlikelyware
+# Unlikelyware downloads
 
-Free [CLAP](https://cleveraudio.org/) instrument plugins by **unlikelyware**.
-Closed-source, but free to download and use.
+Ready-built downloads of Unlikelyware's MIDI 2.0 apps and plugins, for Linux and macOS. The
+source for each one is in its own repo, linked below; this repo holds only the release packages
+and the scripts that make them.
 
-| Plugin | Type | Description |
-|--------|------|-------------|
-| [**StruckSynth**](StruckSynth/) | Instrument (MIDI → audio) | Modal / physical-modeling synthesis — struck and resonant bodies. |
-| [**IFSynth**](IFSynth/) | Instrument (MIDI → audio) | Iterated-function synthesis. |
+**No downloads yet.** The first ones arrive with the 0.9.0 preview, in this repo's
+[Releases](../../releases). Watch this repo (Watch → Custom → Releases) to hear when they do.
 
-## Download
+## Products
 
-Grab the latest builds from the [**Releases**](../../releases) page. Each
-release is a per-plugin, per-OS `.zip` containing the plugin and `NOTICES.txt`,
-alongside a `SHA256SUMS` file for verification.
+| Product | What it is | Source |
+|---|---|---|
+| **StageHand** | Live-performance host for CLAP plugins, with MIDI 1.0 and MIDI 2.0 both first-class | [StageHand](https://github.com/erickampman/StageHand) |
+| **KeyboardEDO** | On-screen MIDI 2.0 keyboard for any equal division of the octave | [KeyboardEDO](https://github.com/erickampman/KeyboardEDO) |
+| **PlainOldSynth** | Classic subtractive synth: one stereo-detuned oscillator, 24 dB low-pass, two ADSRs, two LFOs | [PlainOldSynth](https://github.com/erickampman/PlainOldSynth) |
+| **StruckSynth** | Modal-synthesis instrument: a shaped strike into a bank of tuned resonators | [StruckSynth](https://github.com/erickampman/StruckSynth) |
+| **StruckRoom** | A struck instrument inside a room that scales with the note: somewhere between an instrument and a reverb | [StruckRoom](https://github.com/erickampman/StruckRoom) |
+| **StruckGaussian** | A struck object whose modes are a Gaussian cloud around the note: from a chorus on one pitch to a wide clang | [StruckGaussian](https://github.com/erickampman/StruckGaussian) |
+| **StruckKit** | Modal-synthesis drum kit, a whole kit from one instance | [StruckKit](https://github.com/erickampman/StruckKit) |
+| **IFSynth** | Fractal synth: oscillator, envelopes and LFOs shaped by IFS fractals you draw | [IFSynth](https://github.com/erickampman/IFSynth) |
+| **ModicumFM** | 6-operator FM synth with friendly macros | [ModicumFM](https://github.com/erickampman/ModicumFM) |
+| **Retune** | Transposes every note by a fixed interval in any equal division of the octave | [Retune](https://github.com/erickampman/Retune) |
+| **NoteGran** | Granular synthesis with notes as the grains: Cloud, Chords, Grid, Burst and Buffer | [NoteGran](https://github.com/erickampman/NoteGran) |
+| **EDOSpread12** | Plays any equal division of the octave from an ordinary 12-key keyboard, each key on the step you give it | [EDOSpread12](https://github.com/erickampman/EDOSpread12) |
 
-Release tags are prefixed per plugin, e.g. `struck-v1.0.0`, `if-v1.0.0`.
+StageHand and KeyboardEDO are apps; the others are CLAP plugins. Platforms: Linux x86-64 and
+macOS 26 or later (Apple Silicon). The macOS downloads are signed and notarized.
 
-## Install
+## Packages
 
-Unzip and copy the `.clap` into your system's CLAP folder:
+Each product has one package per platform, named `<Product>-<version>-<os>-<arch>`: a `.zip` on
+macOS, a `.tar.gz` on Linux. Each holds the product, its `LICENSE` (MIT) and
+`THIRD_PARTY_NOTICES.md`. Every release has a `SHA256SUMS.txt` for checking the downloads.
 
-| OS | Location |
-|----|----------|
-| Linux   | `~/.clap/` (or `/usr/lib/clap/`) |
-| macOS   | `~/Library/Audio/Plug-Ins/CLAP/` |
-| Windows | `%COMMONPROGRAMFILES%\CLAP\` (usually `C:\Program Files\Common Files\CLAP\`) |
+Install notes come with the first release.
 
-Then rescan plugins in your CLAP-capable host (Reaper, Bitwig, etc.).
+## Support
 
-> **macOS / Windows:** these builds are unsigned. On macOS, right-click the
-> plugin → **Open**, or clear the quarantine flag, to get past Gatekeeper.
-> On Windows, accept the SmartScreen prompt.
+Report problems in the product's own repo (its Issues), not here. Issues are off in this repo.
 
-## Verify a download
+## Licenses
 
-```sh
-sha256sum -c SHA256SUMS      # Linux
-shasum -a 256 -c SHA256SUMS  # macOS
-```
+Every product is MIT. The third-party code inside each one, and its license, is listed in that
+package's `THIRD_PARTY_NOTICES.md`.
 
-## License
+## In this repo
 
-The plugins are proprietary freeware — you may download and use them at no
-cost; the source code is not distributed. They are built on the permissively
-licensed [DPF](https://github.com/DISTRHO/DPF) (ISC) and
-[CLAP](https://github.com/free-audio/clap) (MIT) projects; their required
-notices are in [`NOTICES.txt`](NOTICES.txt).
-
-The plugins are provided "as is", without warranty of any kind.
-
----
-
-© 2026 unlikelyware · Eric Kampman
+| Path | What it is |
+|---|---|
+| `products.json` | Each product's kind, tagline, formats and links |
+| `scripts/package.sh` | Makes one product's package from its build |
+| `scripts/sign-notarize.sh` | Signs, notarizes and staples the macOS bundles (used by `package.sh`) |
