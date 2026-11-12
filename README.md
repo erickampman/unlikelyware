@@ -31,7 +31,8 @@ macOS 26 or later (Apple Silicon). The macOS downloads are signed and notarized.
 
 Each product has one package per platform, named `<Product>-<version>-<os>-<arch>`: a `.zip` on
 macOS, a `.tar.gz` on Linux. Each holds the product, its `LICENSE` (MIT) and
-`THIRD_PARTY_NOTICES.md`. Every release has a `SHA256SUMS.txt` for checking the downloads.
+`THIRD_PARTY_NOTICES.md` (in `share/doc/<app>/` in the Linux app packages). Every release has a
+`SHA256SUMS.txt` for checking the downloads.
 
 To check a download, compare its checksum with its line in `SHA256SUMS.txt`:
 
@@ -78,15 +79,32 @@ To uninstall, delete the `.clap`.
 whether to open an app downloaded from the internet: click Open. The apps are signed and
 notarized, so nothing more is needed.
 
-**Linux:** unpack the download anywhere you'll keep it, such as `~/.local/lib/stagehand`, and
-keep the executable and its `help` folder together (Help looks for `help/` beside the
-executable). To run it by name, link it into a directory on your `PATH`:
+**Linux:** the download is an install tree (`bin/`, `share/`). Unpack it into `~/.local`, for
+you alone; that puts the command on your `PATH` and the app, with its icon, in your desktop's app
+list:
 
 ```bash
-ln -sf ~/.local/lib/stagehand/stagehand ~/.local/bin/stagehand
+tar -xzf StageHand-0.9.0-linux-x86_64.tar.gz -C ~/.local --strip-components=1
 ```
 
-The same for KeyboardEDO, with `keyboardedo`.
+The same for KeyboardEDO. For every user, unpack into `/usr/local` with `sudo` instead. If
+`~/.local/bin` didn't exist before, log out and back in once so it's on your `PATH`; until then
+the app-list entry can't start the app.
+
+To uninstall, delete what it unpacked. StageHand:
+
+```bash
+rm -r ~/.local/bin/stagehand ~/.local/share/stagehand ~/.local/share/doc/stagehand \
+  ~/.local/share/applications/stagehand.desktop ~/.local/share/icons/hicolor/*/apps/stagehand.png
+```
+
+KeyboardEDO:
+
+```bash
+rm -r ~/.local/bin/keyboardedo ~/.local/share/keyboardedo ~/.local/share/doc/keyboardedo \
+  ~/.local/share/applications/com.unlikelyware.keyboardedo.desktop \
+  ~/.local/share/icons/hicolor/*/apps/com.unlikelyware.keyboardedo.png
+```
 
 StageHand plays through JACK, and on a desktop without a JACK server it restarts itself under
 PipeWire's `pw-jack`. Neither library is on a fresh Ubuntu desktop, and without them StageHand

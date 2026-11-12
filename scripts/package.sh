@@ -1,7 +1,8 @@
 #!/bin/bash
 # package.sh - turn one product's build into its download: <Product>-<version>-<os>-<arch>.zip
 # (macOS) or .tar.gz (Linux), holding the product, LICENSE and THIRD_PARTY_NOTICES.md, and add
-# its line to SHA256SUMS.txt.
+# its line to SHA256SUMS.txt. A Linux app's package is an install tree (bin/, share/) to unpack
+# into ~/.local, /usr/local or /opt.
 #
 # Usage:
 #   package.sh [options] [PRODUCT_DIR [OUT_DIR]]
@@ -22,6 +23,9 @@
 #      <P>.component once products.json lists VST3 and AUv2 under "now".
 #   3. Stage them in <P>-<version>-<os>-<arch>/ with LICENSE (LICENSE or LICENSE.txt) and
 #      THIRD_PARTY_NOTICES.md. The build folder is never changed.
+#      A Linux app is staged by its own install rules, cmake --install --prefix <stage>: bin/<app>,
+#      share/<app>/help/, the .desktop entry and the icons; LICENSE and THIRD_PARTY_NOTICES.md go
+#      in share/doc/<app>/, so unpacking with --strip-components=1 leaves nothing at the top.
 #   4. Linux: stop if any staged binary needs a newer glibc or libstdc++ than Ubuntu 24.04 has
 #      (R4-1), the oldest Linux the downloads support.
 #      macOS: sign, notarize and staple the staged bundles with sign-notarize.sh (beside this
@@ -41,8 +45,6 @@
 # MAX_GLIBC, MAX_GLIBCXX and MAX_CXXABI (Linux) are the newest symbol versions a binary may
 # need: Ubuntu 24.04's, 2.39, 3.4.33 and 1.3.15. Change them only with the README's
 # "What you need" section.
-#
-# Linux apps (StageHand, KeyboardEDO) aren't packaged yet: their layout is still open.
 
 set -euo pipefail
 
@@ -121,8 +123,8 @@ fi
 
 FILES=()
 if [ "$KIND" = app ]; then
-    [ "$OS" = macos ] || die "Linux app packages aren't defined yet"
-    FILES=("$BUILD_DIR/$P.app")
+    if [ "$OS" = macos ]; then FILES=("$BUILD_DIR/$P.app")
+    else FILES=("$BUILD_DIR/cmake_install.cmake"); fi
 else
     for f in $FORMATS; do
         case "$f" in
@@ -151,7 +153,11 @@ for l in LICENSE LICENSE.txt; do [ -f "$SRC/$l" ] && { LICENSE="$SRC/$l"; break;
 
 BASE="$P-$VERSION-$OS-$ARCH"
 [ "$SIGN_ONLY" -eq 1 ] || [ "${SIGN_IDENTITY:-}" = "-" ] && SUFFIX="-unnotarized" || SUFFIX=""
-echo "Packaging $P $VERSION ($KIND) for $OS-$ARCH: $(for f in "${FILES[@]}"; do printf '%s ' "$(basename "$f")"; done)"
+if [ "$KIND" = app ] && [ "$OS" = linux ]; then
+    echo "Packaging $P $VERSION ($KIND) for $OS-$ARCH: cmake --install $BUILD_DIR"
+else
+    echo "Packaging $P $VERSION ($KIND) for $OS-$ARCH: $(for f in "${FILES[@]}"; do printf '%s ' "$(basename "$f")"; done)"
+fi
 
 # --- 3. Stage ---------------------------------------------------------------------------------
 
@@ -160,13 +166,33 @@ trap 'rm -rf "$WORK"' EXIT
 STAGE="$WORK/$BASE"
 mkdir "$STAGE"
 STAGED=()
-for f in "${FILES[@]}"; do
-    if [ "$OS" = macos ]; then ditto "$f" "$STAGE/$(basename "$f")"
-    else cp -R "$f" "$STAGE/"; fi
-    STAGED+=("$STAGE/$(basename "$f")")
-done
-cp "$LICENSE" "$STAGE/LICENSE"
-cp "$SRC/THIRD_PARTY_NOTICES.md" "$STAGE/"
+if [ "$KIND" = app ] && [ "$OS" = linux ]; then
+    # The build's own install rules (the same as cmake --install --prefix ~/.local).
+    DESTDIR="" cmake --install "$BUILD_DIR" --prefix "$STAGE" >/dev/null \
+        || die "cmake --install $BUILD_DIR failed"
+    APP_BINS=("$STAGE"/bin/*)
+    [ ${#APP_BINS[@]} -eq 1 ] && [ -x "${APP_BINS[0]}" ] \
+        || die "expected one executable in bin/ after cmake --install, got: $(ls "$STAGE/bin" 2>/dev/null | tr '\n' ' ')"
+    APP=$(basename "${APP_BINS[0]}")
+    [ -f "$STAGE/share/$APP/help/help.html" ] || die "cmake --install left no share/$APP/help/help.html"
+    ls "$STAGE"/share/applications/*.desktop >/dev/null 2>&1 || die "cmake --install left no .desktop entry"
+    for d in "$STAGE"/*; do
+        case "$(basename "$d")" in bin|share) ;; *) die "cmake --install wrote $(basename "$d")/, not just bin/ and share/" ;; esac
+    done
+    DOC="$STAGE/share/doc/$APP"
+    mkdir -p "$DOC"
+    cp "$LICENSE" "$DOC/LICENSE"
+    cp "$SRC/THIRD_PARTY_NOTICES.md" "$DOC/"
+    STAGED=("$STAGE")
+else
+    for f in "${FILES[@]}"; do
+        if [ "$OS" = macos ]; then ditto "$f" "$STAGE/$(basename "$f")"
+        else cp -R "$f" "$STAGE/"; fi
+        STAGED+=("$STAGE/$(basename "$f")")
+    done
+    cp "$LICENSE" "$STAGE/LICENSE"
+    cp "$SRC/THIRD_PARTY_NOTICES.md" "$STAGE/"
+fi
 
 # --- 4a. Oldest Linux the binaries run on (Linux) -----------------------------------------------
 # A binary built on a newer system can ask for symbol versions Ubuntu 24.04's glibc or libstdc++
