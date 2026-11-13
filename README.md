@@ -127,6 +127,8 @@ nothing until you ask it to.
 
 Report problems in the product's own repo (its Issues), not here. Issues are off in this repo.
 
+If the software is useful to you, you can leave a tip on [Ko-fi](https://ko-fi.com/unlikelyware).
+
 ## Licenses
 
 Every product is MIT. The third-party code inside each one, and its license, is listed in that
