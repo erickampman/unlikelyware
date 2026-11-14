@@ -10,9 +10,7 @@
 #           signing job, which comes next (R4-18).
 # The collect job gathers every package into one "packages" artifact with SHA256SUMS.txt.
 #
-# The project repos are private until R1-19, so checkouts use SOURCES_TOKEN (a fine-grained token,
-# Contents read-only on the twelve projects, DPF, pugl and uw-core). It isn't needed once they're
-# public. Run by hand: Actions -> Release -> Run workflow.
+# Run by hand: Actions -> Release -> Run workflow.
 name: Release
 
 on:
@@ -81,17 +79,8 @@ jobs:
         with:
           repository: ${{ matrix.repo }}
           ref: ${{ inputs.ref }}
-          token: ${{ secrets.SOURCES_TOKEN }}
           # package.sh takes the product's name from its folder's name.
           path: src/${{ matrix.product }}
-      # fetch_deps.sh's own `git submodule` clones don't get checkout's token, so hand it to git
-      # for the private repos (uw-core, dpf and its pugl).
-      - name: Credentials for the private submodules
-        env:
-          SOURCES_TOKEN: ${{ secrets.SOURCES_TOKEN }}
-        run: |
-          git config --global url."https://x-access-token:${SOURCES_TOKEN}@github.com/erickampman/".insteadOf \
-            "https://github.com/erickampman/"
       - name: Submodules and dependency patches
         working-directory: src/${{ matrix.product }}
         run: tools/fetch_deps.sh
