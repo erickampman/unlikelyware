@@ -21,7 +21,7 @@ on:
         required: false
         default: ""
       products:
-        description: "Products to build, comma-separated (empty: all twelve)"
+        description: "Products to build, comma-separated (empty: all of them)"
         required: false
         default: ""
 

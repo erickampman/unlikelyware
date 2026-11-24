@@ -10,7 +10,8 @@
 #            (one product's release, after 1.0.0)
 #   PACKAGE  <Product>-<version>-<os>-<arch>.zip or .tar.gz, as package.sh writes them.
 #            Default: this product's package for this machine's platform, from out/ in this
-#            repo (where package.sh puts it); the product is the current folder's name
+#            repo (where package.sh puts it); the product is the current folder, named as
+#            its key in products.json or as its repo (UmpireDAW, for Umpire)
 #
 # From a product's checkout, after package.sh, with UW_DOWNLOADS_DIR set to this repo's checkout:
 #   "$UW_DOWNLOADS_DIR/scripts/publish.sh" v0.9.0
@@ -62,8 +63,18 @@ PKGS=("${ARGS[@]:1}")
 # No package named: this product's, for this platform, from out/.
 if [ ${#PKGS[@]} -eq 0 ]; then
     HERE=$(cd "$(dirname "$0")" && pwd)
-    P=$(basename "$PWD")
     [ -f CMakeLists.txt ] || die "run this in a product's checkout, or name the package"
+    # The folder is the product's key in products.json or its repo's name (UmpireDAW: Umpire).
+    P=$(python3 -I - "$HERE/../products.json" "$(basename "$PWD")" <<'PY'
+import json, sys
+products = json.load(open(sys.argv[1]))["products"]
+keys = [k for k, p in products.items()
+        if sys.argv[2] in (k, (p.get("repo") or "").rstrip("/").rsplit("/", 1)[-1])]
+if len(keys) != 1:
+    sys.exit("not a product in products.json: " + sys.argv[2])
+print(keys[0])
+PY
+) || die "$(basename "$PWD") isn't a product in products.json (name the package)"
     case "$TAG" in
         v*)     V=${TAG#v} ;;
         "$P"-*) V=${TAG#"$P"-} ;;

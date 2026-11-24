@@ -22,6 +22,7 @@ the repo (Watch → Custom → Releases) to hear about new ones.
 | **StruckKit** | Modal-synthesis drum kit, a whole kit from one instance | [StruckKit](https://github.com/erickampman/StruckKit) |
 | **IFSynth** | Fractal synth: oscillator, envelopes and LFOs shaped by IFS fractals you draw | [IFSynth](https://github.com/erickampman/IFSynth) |
 | **ModicumFM** | 6-operator FM synth with friendly macros | [ModicumFM](https://github.com/erickampman/ModicumFM) |
+| **Umpire** | Records, edits and plays MIDI 2.0 inside your DAW, keeping exact pitch in any equal division of the octave and per-note expression (from 0.9.1) | [UmpireDAW](https://github.com/erickampman/UmpireDAW) |
 | **Retune** | Transposes every note by a fixed interval in any equal division of the octave | [Retune](https://github.com/erickampman/Retune) |
 | **NoteGran** | Granular synthesis with notes as the grains: Cloud, Chords, Grid, Burst and Buffer | [NoteGran](https://github.com/erickampman/NoteGran) |
 | **EDOSpread12** | Plays any equal division of the octave from an ordinary 12-key keyboard, each key on the step you give it | [EDOSpread12](https://github.com/erickampman/EDOSpread12) |

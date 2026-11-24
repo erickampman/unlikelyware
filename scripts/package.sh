@@ -8,8 +8,8 @@
 #   package.sh [options] [PRODUCT_DIR [OUT_DIR]]
 #
 #   PRODUCT_DIR  the product's checkout, already built (cmake --build build); its folder name is
-#                the product's key in products.json (StageHand, ModicumFM, ...). Default: the
-#                current folder
+#                the product's key in products.json (StageHand, ModicumFM, ...) or the name of
+#                its repo (UmpireDAW, for Umpire). Default: the current folder
 #   OUT_DIR      where the archive and SHA256SUMS.txt go (made if missing). Default: out/ in
 #                this repo, where publish.sh looks
 #
@@ -18,6 +18,8 @@
 #
 # Steps:
 #   1. Kind and formats from products.json; version from CMakeLists.txt's project(VERSION).
+#      The products.json key <P> names the bundles and the package; the CMake project is named
+#      after the product's repo (Umpire's is UmpireDAW; the others' are their keys).
 #      If HEAD is tagged, the tag must be v<version> (R4-4).
 #   2. Files: an app is <P>.app (macOS); a plugin is <P>.clap, plus <P>.vst3 and (macOS)
 #      <P>.component once products.json lists VST3 and AUv2 under "now".
@@ -92,23 +94,30 @@ ARCH=$(uname -m)
 
 # --- 1. Name, kind, formats, version ------------------------------------------------------
 
-P=$(basename "$SRC")
-info=$(python3 -I - "$PRODUCTS" "$P" <<'PY'
+DIR=$(basename "$SRC")
+info=$(python3 -I - "$PRODUCTS" "$DIR" <<'PY'
 import json, sys
 products = json.load(open(sys.argv[1]))["products"]
-p = products.get(sys.argv[2])
-if p is None:
+def repo_name(p):
+    return (p.get("repo") or "").rstrip("/").rsplit("/", 1)[-1]
+keys = [k for k, p in products.items() if sys.argv[2] in (k, repo_name(p))]
+if len(keys) != 1:
     sys.exit("not a product in products.json: " + sys.argv[2])
+p = products[keys[0]]
 now = (p.get("formats") or {}).get("now") or []
+print(keys[0])
+print(repo_name(p) or keys[0])
 print(p["kind"])
 print(" ".join(f.split()[0] for f in now))   # "AUv2 (macOS)" -> AUv2
 PY
-) || die "products.json has no entry for $P"
-KIND=$(sed -n 1p <<<"$info")
-FORMATS=$(sed -n 2p <<<"$info")
+) || die "products.json has no entry for $DIR"
+P=$(sed -n 1p <<<"$info")
+PROJECT=$(sed -n 2p <<<"$info")
+KIND=$(sed -n 3p <<<"$info")
+FORMATS=$(sed -n 4p <<<"$info")
 
-VERSION=$(grep -m1 -oE "^project\($P VERSION [0-9]+\.[0-9]+\.[0-9]+" "$SRC/CMakeLists.txt" | awk '{print $3}') \
-    || die "no project($P VERSION x.y.z) in $SRC/CMakeLists.txt"
+VERSION=$(grep -m1 -oE "^project\($PROJECT VERSION [0-9]+\.[0-9]+\.[0-9]+" "$SRC/CMakeLists.txt" | awk '{print $3}') \
+    || die "no project($PROJECT VERSION x.y.z) in $SRC/CMakeLists.txt"
 
 if git -C "$SRC" rev-parse --git-dir >/dev/null 2>&1; then
     if tag=$(git -C "$SRC" describe --exact-match --tags HEAD 2>/dev/null); then
