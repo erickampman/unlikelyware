@@ -9,7 +9,7 @@
 #
 #   PRODUCT_DIR  the product's checkout, already built (cmake --build build); its folder name is
 #                the product's key in products.json (StageHand, ModicumFM, ...) or the name of
-#                its repo (UmpireDAW, for Umpire). Default: the current folder
+#                its repo, where the two differ. Default: the current folder
 #   OUT_DIR      where the archive and SHA256SUMS.txt go (made if missing). Default: out/ in
 #                this repo, where publish.sh looks
 #
@@ -19,7 +19,7 @@
 # Steps:
 #   1. Kind and formats from products.json; version from CMakeLists.txt's project(VERSION).
 #      The products.json key <P> names the bundles and the package; the CMake project is named
-#      after the product's repo (Umpire's is UmpireDAW; the others' are their keys).
+#      after the product's repo (today every product's repo is named as its key).
 #      If HEAD is tagged, the tag must be v<version> (R4-4).
 #   2. Files: an app is <P>.app (macOS); a plugin is <P>.clap, plus <P>.vst3 and (macOS)
 #      <P>.component once products.json lists VST3 and AUv2 under "now".
