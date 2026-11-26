@@ -76,23 +76,30 @@ On macOS, `shasum -a 256` in place of `sha256sum`.
 
 ### Plugins
 
-Every product except StageHand and KeyboardEDO is a CLAP plugin: a single `<Product>.clap`.
-Unpack the download and put the `.clap` in your CLAP folder (create the folder if it isn't
-there):
+Every product except StageHand and KeyboardEDO is a CLAP plugin. A 0.9.0 download holds a
+single `<Product>.clap`; from 0.9.1, the seven synths and Retune also hold a `<Product>.vst3`
+and, on macOS, a `<Product>.component` (AUv2), and EDOSpread12 and NoteGran a `.component` on macOS (NoteGran's holds its five effects). Unpack the download and put each one in its
+format's folder (create the folder if it isn't there):
 
-| | Linux | macOS |
-|---|---|---|
-| For you | `~/.clap` | `~/Library/Audio/Plug-Ins/CLAP` |
-| For every user | `/usr/lib/clap` | `/Library/Audio/Plug-Ins/CLAP` |
+| Format | Linux, for you | Linux, every user | macOS, for you | macOS, every user |
+|---|---|---|---|---|
+| CLAP (`.clap`) | `~/.clap` | `/usr/lib/clap` | `~/Library/Audio/Plug-Ins/CLAP` | `/Library/Audio/Plug-Ins/CLAP` |
+| VST3 (`.vst3`) | `~/.vst3` | `/usr/lib/vst3` | `~/Library/Audio/Plug-Ins/VST3` | `/Library/Audio/Plug-Ins/VST3` |
+| AUv2 (`.component`) | — | — | `~/Library/Audio/Plug-Ins/Components` | `/Library/Audio/Plug-Ins/Components` |
+
+The `.vst3` and `.component` are bundles (folders): move each one whole. You only need the
+formats your host loads.
 
 On macOS, `~/Library` is hidden in Finder: Go ▸ Go to Folder opens it.
 
 Then let your host find it. A host that is already running keeps the plugins it loaded, so quit
 and restart it. Most hosts scan for new plugins as they start; if the plugin still doesn't
-appear, rescan from the host's plugin settings (in REAPER: Preferences ▸ Plug-ins ▸ CLAP, "Clear
-cache/re-scan"). StageHand looks in the same folders.
+appear, rescan from the host's plugin settings (in REAPER: Preferences ▸ Plug-ins ▸ LV2/CLAP,
+"Clear cache/re-scan", for a `.clap`; Preferences ▸ Plug-ins ▸ VST, "Re-scan...", for a
+`.vst3`). StageHand looks in the CLAP folders
+and loads CLAP only.
 
-To uninstall, delete the `.clap`.
+To uninstall, delete the `.clap`, and the `.vst3` and `.component` if you installed them.
 
 ### StageHand and KeyboardEDO
 
@@ -150,8 +157,9 @@ What 0.9.0 doesn't do yet. Each product's README has its own Known gaps section,
 
 ### Across the release
 
-- **CLAP only.** VST3 and AUv2 (macOS) builds come in a later preview (0.9.1). Hosts without
-  CLAP, Logic among them, can't load the plugins yet.
+- **CLAP only.** Hosts without CLAP, Logic among them, can't load the 0.9.0 plugins. VST3 and
+  AUv2 (macOS) builds of the seven synths and Retune, and AUv2s of EDOSpread12 and NoteGran,
+  come in the next preview (0.9.1).
 - **Settings may change before 1.0.0.** A project or set saved with 0.9.0 may not open the same
   way in a later version.
 - **No Windows build,** and no Intel Mac build.
@@ -192,6 +200,11 @@ If the software is useful to you, you can leave a tip on [Ko-fi](https://ko-fi.c
 
 Every product is MIT. The third-party code inside each one, and its license, is listed in that
 package's `THIRD_PARTY_NOTICES.md`.
+
+VST is a registered trademark of Steinberg Media Technologies GmbH. Audio Units, Logic, Mac and
+macOS are trademarks of Apple Inc., registered in the U.S. and other countries. Linux is the
+registered trademark of Linus Torvalds in the U.S. and other countries. Other product names are
+trademarks of their owners, named here only to say what works with what.
 
 ## In this repo
 
