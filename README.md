@@ -168,6 +168,9 @@ What 0.9.0 doesn't do yet. Each product's README has its own Known gaps section,
 - **Microtonal notes need a host that passes them on.** The note effects send exact pitch as
   MIDI 2.0 Pitch 7.9 or as CLAP notes with tuning expressions. StageHand and Bitwig keep it;
   REAPER plays Retune's, NoteGran's and EDOSpread12's output rounded to semitones.
+- **The note effects' AUv2s are for Logic.** From 0.9.1, Retune, NoteGran and EDOSpread12 come
+  as AUv2 MIDI effects on macOS, but REAPER doesn't pass on an AU MIDI effect's output: use their
+  CLAPs there.
 
 ### By product
 
@@ -186,6 +189,8 @@ What 0.9.0 doesn't do yet. Each product's README has its own Known gaps section,
   are silent.
 - [**Retune**](https://github.com/erickampman/Retune#known-gaps): with Dry on and a shift under a
   semitone over MIDI (StageHand, for one), you hear only the shifted note. Bitwig plays both.
+  From 0.9.1, its VST3 shows as an instrument (a VST3i in REAPER), since VST3 has no category
+  for MIDI effects; it still works in front of the synth.
 - **The synths** (PlainOldSynth, StruckSynth, StruckGaussian, IFSynth, ModicumFM): MPE's upper
   zone isn't supported; a Pitch 7.25 note lasts for the sounding note only (no tuning table);
   factory presets are chosen in the editor, not in a host's preset browser.
